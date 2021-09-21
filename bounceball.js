@@ -18,7 +18,7 @@ class MyCircle {
   }
 
   overlaps(circle2) {
-    let dist = p5.Vector.sub(this.P, circle2)
+    let dist = p5.Vector.sub(this.P, circle2.P)
 
     let sumOfRadii = this.R + circle2.R;
     let distanceSquared = dist.x * dist.x + dist.y * dist.y;
@@ -50,11 +50,13 @@ class MyCircle {
 
 class Ball extends MyCircle{
   // speed in pixel/sec
-  constructor(x,y,R,vx,vy){
+  constructor(x,y,R, m, vx,vy){
     super(x,y,R)
+    this.m = m
     this.V = createVector(vx,vy)
     this.id = uniqueID()
     this.color = color(255,255,255)
+    this.colided_this_update = false;
     
   }
   update(dt_ms) {
@@ -64,48 +66,87 @@ class Ball extends MyCircle{
     let P2 = p5.Vector.add(P1, p5.Vector.mult(this.V,0.001*dt_ms))
 
     if ((this.V.x > 0) && (P2.x + this.R > window.innerWidth)) {
-        this.V.x = - this.V.x
-        let A = - (P1.x + this.R)  + window.innerWidth
-        let B =   (P2.x + this.R) - window.innerWidth
-        P2.x = P1.x + A - B
+      this.V.x = - this.V.x
+      let A = - (P1.x + this.R)  + window.innerWidth
+      let B =   (P2.x + this.R) - window.innerWidth
+      P2.x = P1.x + A - B
+
     } else if ((this.V.x < 0) && (P2.x - this.R <= 0)) {
       this.V.x = - this.V.x
       let A =   (P1.x - this.R)  
       let B =  -(P2.x - this.R) 
       P2.x = P1.x + A - B
-    } else if ((this.V.y > 0) && (P2.y + this.R > window.innerWidth)) {
+
+    } else if ((this.V.y > 0) && (P2.y + this.R > window.innerHeight)) {
       this.V.y = - this.V.y
-      let A = - (P1.y + this.R)  + window.innerWidth
-      let B =   (P2.y + this.R) - window.innerWidth
+      let A = - (P1.y + this.R)  + window.innerHeight
+      let B =   (P2.y + this.R) - window.innerHeight
       P2.y = P1.y + A - B
     } else if ((this.V.y < 0) && (P2.y - this.R <= 0)) {
       this.V.y = - this.V.y
       let A =   (P1.y - this.R)  
       let B =  -(P2.y - this.R) 
       P2.y = P1.y + A - B
-    }
-  
+    } else {
+      // https://ericleong.me/research/circle-circle/
+      // https://processing.org/examples/circlecollision.html
 
-    // https://ericleong.me/research/circle-circle/
-    // https://processing.org/examples/circlecollision.html
+      if (!this.colided_this_update) {
+        balls.forEach(ball => {      // let's check for each other ball if we collide
+          if ((ball.id != this.id) && (!ball.colided_this_update)) {   // not with this one
+            if (this.overlaps(ball)) { // we overlap
+              console.log("overlap " + this.id)
+              ball.color = color(255,55,55)
+              this.color = color(255,55,55)
 
-    let C2 = new MyCircle(P2.x, P2.y, this.R)    // make a new circle at position 2
-    balls.forEach(ball => {      // let's check for each other ball if we collide
-      if (ball.id != this.id) {   // not with this one
-        if (C2.overlaps(ball)) { // we overlap
-          console.log("orverlap " + this.id)
-          ball.color = color(255,55,55)
-          this.color = color(255,55,55)
-          let d = ball.closestpointtoline(P1, P2)
+              this.colide(ball)
+              ball.colided_this_update = true;
+              this.colided_this_update = true;
 
-          
-        } 
-        
+              P2 = p5.Vector.add(P1, p5.Vector.mult(this.V,0.001*dt_ms))
+
+            } 
+            
+          }
+
+        })
       }
 
-    })
+
+    }
 
     this.P = P2.copy()
+
+
+
+  }
+
+  energy() {
+    return 0.5*this.m*(this.V.x*this.V.x + this.V.y*this.V.y)
+  }
+
+  colide(other) {
+    let tana = (other.P.y - this.P.y) / (other.P.x - this.P.x)
+    // set other other still
+    let v =  p5.Vector.sub(this.V, other.V)
+    let m1 = this.m
+    let m2 = other.m
+
+    let beta = m2*v.x + m2*v.y*tana
+    let gamma = 0.5*((1+tana*tana) * (m1 + m2))
+    let u2x = beta / gamma
+    let u2y = u2x * tana
+    let u1x = v.x - m2 * u2x / m1
+    let u1y = v.y - m2 * u2y / m1
+
+    let u1 = createVector(u1x, u1y)
+    let u2 = createVector(u2x, u2y)
+
+    this.V  = p5.Vector.add(u1, other.V)
+    other.V = p5.Vector.add(u2, other.V)
+
+
+
 
   }
 
@@ -138,7 +179,15 @@ function draw() {
   dt_ms = millis() - last_time_ms
   last_time_ms = millis()
   // update scene
+  // let energy = 0; 
+  // balls.forEach(ball => {energy+= ball.energy()})
+  // // console.log("voor  " + energy);
+  // energy = 0;
+
   balls.forEach(ball => {ball.update(dt_ms)});
+  balls.forEach(ball => {ball.colided_this_update = false});
+  balls.forEach(ball => {energy+= ball.energy()})
+  // console.log("na    " + energy);
 
   // draw scene
 
@@ -155,7 +204,8 @@ function draw() {
 }
 
 function mousePressed(event) {
-  let new_ball = new Ball(mouseX, mouseY, 40, random(-1,1)*100, random(-1,1)*100)
+  RM = random(20,50)
+  let new_ball = new Ball(mouseX, mouseY, RM, RM, random(-1,1)*100, random(-1,1)*100)
   overlaps = false
   balls.forEach(ball => {
     if (new_ball.overlaps(ball)){overlaps = true} })
