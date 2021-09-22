@@ -56,7 +56,6 @@ class Ball extends MyCircle{
     this.V = createVector(vx,vy)
     this.id = uniqueID()
     this.color = color(255,255,255)
-    this.colided_this_update = false;
     
   }
   update(dt_ms) {
@@ -93,15 +92,13 @@ class Ball extends MyCircle{
 
       if (!this.colided_this_update) {
         balls.forEach(ball => {      // let's check for each other ball if we collide
-          if ((ball.id != this.id) && (!ball.colided_this_update)) {   // not with this one
+          if ((ball.id != this.id) && (true)) {   // not with this one
             if (this.overlaps(ball)) { // we overlap
               console.log("overlap " + this.id)
               ball.color = color(255,55,55)
               this.color = color(255,55,55)
 
               this.colide(ball)
-              ball.colided_this_update = true;
-              this.colided_this_update = true;
 
               P2 = p5.Vector.add(P1, p5.Vector.mult(this.V,0.001*dt_ms))
 
@@ -127,7 +124,7 @@ class Ball extends MyCircle{
 
   colide(other) {
     let tana = (other.P.y - this.P.y) / (other.P.x - this.P.x)
-    // set other other still
+    // set to ball 2 reference frame 
     let v =  p5.Vector.sub(this.V, other.V)
     let m1 = this.m
     let m2 = other.m
@@ -142,6 +139,7 @@ class Ball extends MyCircle{
     let u1 = createVector(u1x, u1y)
     let u2 = createVector(u2x, u2y)
 
+    // move back to reference frame.
     this.V  = p5.Vector.add(u1, other.V)
     other.V = p5.Vector.add(u2, other.V)
 
