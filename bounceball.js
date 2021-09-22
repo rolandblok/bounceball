@@ -133,7 +133,7 @@ class Ball extends MyCircle{
     let m2 = other.m
 
     let beta = m2*v.x + m2*v.y*tana
-    let gamma = 0.5*((1+tana*tana) * (m1 + m2))
+    let gamma = 0.5*m2*((1+tana*tana) * (m1 + m2))/m1
     let u2x = beta / gamma
     let u2y = u2x * tana
     let u1x = v.x - m2 * u2x / m1
@@ -179,15 +179,15 @@ function draw() {
   dt_ms = millis() - last_time_ms
   last_time_ms = millis()
   // update scene
-  // let energy = 0; 
-  // balls.forEach(ball => {energy+= ball.energy()})
-  // // console.log("voor  " + energy);
-  // energy = 0;
+  let energy = 0; 
+  balls.forEach(ball => {energy+= ball.energy()})
+  console.log("voor  " + energy);
+  energy = 0;
 
   balls.forEach(ball => {ball.update(dt_ms)});
   balls.forEach(ball => {ball.colided_this_update = false});
   balls.forEach(ball => {energy+= ball.energy()})
-  // console.log("na    " + energy);
+  console.log("na    " + energy);
 
   // draw scene
 
