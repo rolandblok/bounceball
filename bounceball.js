@@ -56,9 +56,16 @@ class Ball extends MyCircle{
     this.V = createVector(vx,vy)
     this.id = uniqueID()
     this.color = color(255,255,255)
+    this.bounce_color_timer = 255
     
   }
   update(dt_ms) {
+
+    if (this.bounce_color_timer < 255) {
+      this.bounce_color_timer += dt_ms * 0.1
+    }
+    if (this.bounce_color_timer > 255) this.bounce_color_timer = 255
+
 
     // hardcoded edge detection
     let P1 = this.P.copy()
@@ -95,8 +102,8 @@ class Ball extends MyCircle{
           if ((ball.id != this.id) && (true)) {   // not with this one
             if (this.overlaps(ball)) { // we overlap
               console.log("overlap " + this.id)
-              ball.color = color(255,55,55)
-              this.color = color(255,55,55)
+              this.bounce_color_timer = 55
+              ball.bounce_color_timer = 55
 
               this.colide(ball)
 
@@ -113,6 +120,8 @@ class Ball extends MyCircle{
     }
 
     this.P = P2.copy()
+
+    this.color = color(255,this.bounce_color_timer,this.bounce_color_timer)
 
 
 
