@@ -9,7 +9,14 @@ var uniqueID = (function() {
 })(); // Invoke the outer function after defining it.
 
 
-balls = []
+dat_gui_dat = new Set()
+disks = []
+paused = false
+
+dat_gui_dat.gui = new dat.GUI()
+dat_gui_dat.speed = 1
+dat_gui_dat.gui.add(dat_gui_dat,'speed',0.1,5 ).step(0.05) 
+
 
 class MyCircle {
   constructor (x,y,R) {
@@ -48,8 +55,12 @@ class MyCircle {
 
 }
 
-class Ball extends MyCircle{
+class Disk extends MyCircle{
   // speed in pixel/sec
+  static instanceFromCircle(c, m, vx,vy) {
+    return new Disk(c.P.x, c.P.y, c.R, m, vx,vy )
+  }
+
   constructor(x,y,R, m, vx,vy){
     super(x,y,R)
     this.m = m
@@ -61,6 +72,7 @@ class Ball extends MyCircle{
   }
   update(dt_ms) {
 
+    dt_ms *= dat_gui_dat.speed
     if (this.bounce_color_timer < 255) {
       this.bounce_color_timer += dt_ms * 0.1
     }
@@ -71,59 +83,51 @@ class Ball extends MyCircle{
     let P1 = this.P.copy()
     let P2 = p5.Vector.add(P1, p5.Vector.mult(this.V,0.001*dt_ms))
 
-    if ((this.V.x > 0) && (P2.x + this.R > window.innerWidth)) {
+    // collision the walls
+    if ((P2.x + this.R > window.innerWidth)) {
       this.V.x = - this.V.x
-      let A = - (P1.x + this.R)  + window.innerWidth
-      let B =   (P2.x + this.R) - window.innerWidth
-      P2.x = P1.x + A - B
-
-    } else if ((this.V.x < 0) && (P2.x - this.R <= 0)) {
+      P2.x = -P2.x +2*(window.innerWidth-this.R)
+    }
+    if ((P2.x - this.R <= 0)) {
       this.V.x = - this.V.x
-      let A =   (P1.x - this.R)  
-      let B =  -(P2.x - this.R) 
-      P2.x = P1.x + A - B
 
-    } else if ((this.V.y > 0) && (P2.y + this.R > window.innerHeight)) {
+      P2.x = -P2.x + 2*this.R
+    }
+    if ((P2.y + this.R > window.innerHeight)) {
       this.V.y = - this.V.y
-      let A = - (P1.y + this.R)  + window.innerHeight
-      let B =   (P2.y + this.R) - window.innerHeight
-      P2.y = P1.y + A - B
-    } else if ((this.V.y < 0) && (P2.y - this.R <= 0)) {
+
+      P2.y = -P1.y +2*(window.innerHeight-this.R)
+    }
+    if ( (P2.y - this.R <= 0)) {
       this.V.y = - this.V.y
-      let A =   (P1.y - this.R)  
-      let B =  -(P2.y - this.R) 
-      P2.y = P1.y + A - B
-    } else {
-      // https://ericleong.me/research/circle-circle/
-      // https://processing.org/examples/circlecollision.html
 
-      if (!this.colided_this_update) {
-        balls.forEach(ball => {      // let's check for each other ball if we collide
-          if ((ball.id != this.id) && (true)) {   // not with this one
-            if (this.overlaps(ball)) { // we overlap
-              console.log("overlap " + this.id)
-              this.bounce_color_timer = 55
-              ball.bounce_color_timer = 55
-
-              this.colide(ball)
-
-              P2 = p5.Vector.add(P1, p5.Vector.mult(this.V,0.001*dt_ms))
-
-            } 
-            
-          }
-
-        })
-      }
-
-
+      P2.y = -P1.y + 2*this.R
     }
 
     this.P = P2.copy()
 
-    this.color = color(255,this.bounce_color_timer,this.bounce_color_timer)
 
+    // https://ericleong.me/research/circle-circle/
+    // https://processing.org/examples/circlecollision.html
+    disks.forEach(disk => {      // let's check for each other disk if we collide
+      if ((disk.id != this.id) && (true)) {   // not with this one
+        if (this.overlaps(disk)) { // we overlap
+          console.log("overlap " + this.id)
+          this.bounce_color_timer = 55
+          disk.bounce_color_timer = 55
 
+          this.colide(disk)
+          console.log('energy ' + calc_energy())
+
+          P2 = p5.Vector.add(P1, p5.Vector.mult(this.V,0.001*dt_ms))
+        } 
+      }
+    })
+
+    this.P = P2.copy()
+
+    
+    this.color = color(255,this.bounce_color_timer,this.bounce_color_timer,127)
 
   }
 
@@ -133,7 +137,7 @@ class Ball extends MyCircle{
 
   colide(other) {
     let tana = (other.P.y - this.P.y) / (other.P.x - this.P.x)
-    // set to ball 2 reference frame 
+    // set to disk 2 reference frame 
     let v =  p5.Vector.sub(this.V, other.V)
     let m1 = this.m
     let m2 = other.m
@@ -151,9 +155,6 @@ class Ball extends MyCircle{
     // move back to reference frame.
     this.V  = p5.Vector.add(u1, other.V)
     other.V = p5.Vector.add(u2, other.V)
-
-
-
 
   }
 
@@ -185,19 +186,15 @@ function draw() {
 
   dt_ms = millis() - last_time_ms
   last_time_ms = millis()
+  
+  
   // update scene
-  let energy = 0; 
-  balls.forEach(ball => {energy+= ball.energy()})
-  console.log("voor  " + energy);
-  energy = 0;
+  if (!paused) {
+    disks.forEach(disk => {disk.update(dt_ms)});
+  }
 
-  balls.forEach(ball => {ball.update(dt_ms)});
-  balls.forEach(ball => {ball.colided_this_update = false});
-  balls.forEach(ball => {energy+= ball.energy()})
-  console.log("na    " + energy);
 
   // draw scene
-
   background(255); // Set the background to white
 
 
@@ -206,18 +203,38 @@ function draw() {
   fill(155);
   circle(mouseX, mouseY, 80);
 
-  balls.forEach(ball => {ball.draw()});
+  disks.forEach(disk => {disk.draw()});
 
 }
 
-function mousePressed(event) {
-  RM = random(20,50)
-  let new_ball = new Ball(mouseX, mouseY, RM, RM, random(-1,1)*100, random(-1,1)*100)
+function calc_energy() {
+  let energy = 0; 
+  disks.forEach(disk => {energy+= disk.energy()})
+  return energy;
+}
+
+
+function mouseDragged(event) {
+  RM = random(20,100)
+  let new_circle = new MyCircle(event.x, event.y, RM)
   overlaps = false
-  balls.forEach(ball => {
-    if (new_ball.overlaps(ball)){overlaps = true} })
-  if (!overlaps) balls.push(new_ball)
+  disks.forEach(disk => {
+    if (new_circle.overlaps(disk)){overlaps = true} })
+  if (!overlaps) {
+    let new_disk = Disk.instanceFromCircle(new_circle, RM, random(-1,1)*220, random(-1,1)*220)
+    disks.push(new_disk)
+  }
 } 
+function mousePressed(event) {
+}
+function keyPressed(event) {
+  console.log("key " + event)
+  if (event.key === 'p') {
+    paused = !paused
+  }
+
+}
+
 
 function resize() {
   console.log("resize")
