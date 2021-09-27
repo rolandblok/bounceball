@@ -9,13 +9,21 @@ var uniqueID = (function() {
 })(); // Invoke the outer function after defining it.
 
 
-dat_gui_dat = new Set()
-disks = []
-paused = false
+this.stats = new Stats();
+document.body.appendChild(this.stats.dom);
+stats.showPanel(0)  // 0: fps, 1: ms, 2: mb, 3+: custom
+var stats_energy_panel = stats.addPanel( new Stats.Panel( 'energy', '#ff8', '#221' ) );
+
+
+let dat_gui_dat = new Set()
+let disks = []
+let paused = false
 
 dat_gui_dat.gui = new dat.GUI()
 dat_gui_dat.speed = 1
 dat_gui_dat.gui.add(dat_gui_dat,'speed',0.1,5 ).step(0.05) 
+dat_gui_dat.gravity = 100
+dat_gui_dat.gui.add(dat_gui_dat,'gravity',0,200 ).step(1) 
 
 
 class MyCircle {
@@ -64,6 +72,7 @@ class Disk extends MyCircle{
   constructor(x,y,R, m, vx,vy){
     super(x,y,R)
     this.m = m
+    
     this.V = createVector(vx,vy)
     this.id = uniqueID()
     this.color = color(255,255,255)
@@ -72,16 +81,20 @@ class Disk extends MyCircle{
   }
   update(dt_ms) {
 
-    dt_ms *= dat_gui_dat.speed
+    dt_ms *= 0.001*dat_gui_dat.speed
+
+
     if (this.bounce_color_timer < 255) {
-      this.bounce_color_timer += dt_ms * 0.1
+      this.bounce_color_timer += dt_ms * 100
     }
     if (this.bounce_color_timer > 255) this.bounce_color_timer = 255
 
 
+    this.V.y += dat_gui_dat.gravity * dt_ms
+
     // hardcoded edge detection
     let P1 = this.P.copy()
-    let P2 = p5.Vector.add(P1, p5.Vector.mult(this.V,0.001*dt_ms))
+    let P2 = p5.Vector.add(P1, p5.Vector.mult(this.V, dt_ms))
 
     // collision the walls
     if ((P2.x + this.R > window.innerWidth)) {
@@ -117,9 +130,9 @@ class Disk extends MyCircle{
           disk.bounce_color_timer = 55
 
           this.colide(disk)
-          console.log('energy ' + calc_energy())
+          P2 = p5.Vector.add(P1, p5.Vector.mult(this.V, dt_ms))
 
-          P2 = p5.Vector.add(P1, p5.Vector.mult(this.V,0.001*dt_ms))
+          console.log('energy ' + system_energy())
         } 
       }
     })
@@ -132,7 +145,7 @@ class Disk extends MyCircle{
   }
 
   energy() {
-    return 0.5*this.m*(this.V.x*this.V.x + this.V.y*this.V.y)
+    return 0.5*this.m*(this.V.x*this.V.x + this.V.y*this.V.y) + this.m * dat_gui_dat.gravity * (window.innerHeight - this.P.y)
   }
 
   colide(other) {
@@ -183,6 +196,7 @@ function setup() {
 var last_time_ms = 0
 var dirs = [-1, 1]
 function draw() {
+  this.stats.begin();
 
   dt_ms = millis() - last_time_ms
   last_time_ms = millis()
@@ -205,15 +219,24 @@ function draw() {
 
   disks.forEach(disk => {disk.draw()});
 
+  stats_energy_panel.update( system_energy(), this.max_energy*2 );
+  this.stats.end();
+
 }
 
-function calc_energy() {
+let max_energy = 0
+function system_energy() {
   let energy = 0; 
   disks.forEach(disk => {energy+= disk.energy()})
+  energy *= 0.0001
+  if (energy > max_energy)  this.max_energy = energy 
   return energy;
 }
 
 
+// =================
+// ===MOUSE n KEYS=======
+// =================
 function mouseDragged(event) {
   RM = random(20,100)
   let new_circle = new MyCircle(event.x, event.y, RM)
@@ -226,6 +249,7 @@ function mouseDragged(event) {
   }
 } 
 function mousePressed(event) {
+  mouseDragged(event)
 }
 function keyPressed(event) {
   console.log("key " + event)
