@@ -14,16 +14,16 @@ document.body.appendChild(this.stats.dom);
 stats.showPanel(0)  // 0: fps, 1: ms, 2: mb, 3+: custom
 var stats_energy_panel = stats.addPanel( new Stats.Panel( 'energy', '#ff8', '#221' ) );
 
+// var p5_gui = createGui('roland')
 
-let dat_gui_dat = new Set()
+var p5gui;
+var p5gui_params = {
+  speed: 1,  speedMin : 0.1, speedMax: 5, speedStep: 0.05,
+  gravity: 100, gravityMin:0, gravityMax: 500, gravityStep: 1
+}
+
 let disks = []
 let paused = false
-
-dat_gui_dat.gui = new dat.GUI()
-dat_gui_dat.speed = 1
-dat_gui_dat.gui.add(dat_gui_dat,'speed',0.1,5 ).step(0.05) 
-dat_gui_dat.gravity = 100
-dat_gui_dat.gui.add(dat_gui_dat,'gravity',0,200 ).step(1) 
 
 
 class MyCircle {
@@ -81,7 +81,7 @@ class Disk extends MyCircle{
   }
   update(dt_ms) {
 
-    dt_ms *= 0.001*dat_gui_dat.speed
+    dt_ms *= 0.001*p5gui_params.speed
 
 
     if (this.bounce_color_timer < 255) {
@@ -90,7 +90,7 @@ class Disk extends MyCircle{
     if (this.bounce_color_timer > 255) this.bounce_color_timer = 255
 
 
-    this.V.y += dat_gui_dat.gravity * dt_ms
+    this.V.y += p5gui_params.gravity * dt_ms
 
     // hardcoded edge detection
     let P1 = this.P.copy()
@@ -125,14 +125,12 @@ class Disk extends MyCircle{
     disks.forEach(disk => {      // let's check for each other disk if we collide
       if ((disk.id != this.id) && (true)) {   // not with this one
         if (this.overlaps(disk)) { // we overlap
-          console.log("overlap " + this.id)
           this.bounce_color_timer = 55
           disk.bounce_color_timer = 55
 
           this.colide(disk)
           P2 = p5.Vector.add(P1, p5.Vector.mult(this.V, dt_ms))
 
-          console.log('energy ' + system_energy())
         } 
       }
     })
@@ -145,7 +143,7 @@ class Disk extends MyCircle{
   }
 
   energy() {
-    return 0.5*this.m*(this.V.x*this.V.x + this.V.y*this.V.y) + this.m * dat_gui_dat.gravity * (window.innerHeight - this.P.y)
+    return 0.5*this.m*(this.V.x*this.V.x + this.V.y*this.V.y) + this.m * p5gui_params.gravity * (window.innerHeight - this.P.y)
   }
 
   colide(other) {
@@ -187,7 +185,15 @@ function setup() {
   // createCanvas(400,400)
   createCanvas(window.innerWidth, window.innerHeight)
   window.addEventListener("resize", this.resize, false);
+  
+  window.addEventListener("focus", function(event) { console.log( "window has focus"); paused = false }, false);
+  window.addEventListener("blur", function(event) { console.log( "window lost focus");paused = true }, false);
+  
 
+  sliderRange(0, 90, 1);
+  var p5gui = createGui('roland').setPosition(width - 200, 0);;
+  p5gui.addObject(p5gui_params);
+  
 }
 
 // =================
@@ -252,9 +258,11 @@ function mousePressed(event) {
   mouseDragged(event)
 }
 function keyPressed(event) {
-  console.log("key " + event)
+  console.log("key " + event.key)
   if (event.key === 'p') {
     paused = !paused
+  } else if (event.key === 'r') {
+    disks = []    
   }
 
 }
