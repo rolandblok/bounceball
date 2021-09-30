@@ -5,6 +5,8 @@ http://raw.githack.com/rolandblok/bounceball/master/index.html
 Doing some physics 
 
 
+<img src="https://render.githubusercontent.com/render/math?math=U_2^y/U_2^x = \delta y / \delta x">
+
 <img src="https://render.githubusercontent.com/render/math?math=e^{i \pi} = -1">
 
 
