@@ -6,6 +6,7 @@ Doing some physics
 
 
 Action is reaction : second ball has only normal force of impact ball. I will move in direction of impact normal. Therefore, we can put an equation for the speeds
+
 <img src="https://render.githubusercontent.com/render/math?math=\frac{u_2^y}{u_2^x}  = \frac{\Delta y }{\Delta x} = tan(\alpha)">
 
 <img src="https://render.githubusercontent.com/render/math?math=e^{i \pi} = -1">
