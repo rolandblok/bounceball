@@ -7,7 +7,7 @@ How do you solve this collision of 2 balls : ball 1 and ball 2?
 Let's say they have mass : m1 and m2.
 We simplify speeds : move to a reference frame of ball 2 : we put ball 2 to standstill, and ball 1 to initial impact speed : v1.
 
-Second simplification : we assume no friction with the floor. Therefore, no rotation of the disks will occur.
+Second simplification : we assume no friction with the floor. An no rotation of the disks will occur.
 
 Now Newton all the way: action is reaction. The second ball has only a normal force of impact from ball 1. It will move in direction of impact normal. Therefore, we can put an equation for the speed u2 of ball 2 as fraction of the relative positions of the balls:
 
