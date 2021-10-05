@@ -19,7 +19,7 @@ var stats_energy_panel = stats.addPanel( new Stats.Panel( 'energy', '#ff8', '#22
 var p5gui;
 var p5gui_params = {
   speed: 1,  speedMin : 0.1, speedMax: 5, speedStep: 0.05,
-  gravity: 100, gravityMin:0, gravityMax: 500, gravityStep: 1
+  gravity: 1000, gravityMin:0, gravityMax: 10000, gravityStep: 10
 }
 
 let disks = []
@@ -95,25 +95,25 @@ class Disk extends MyCircle{
     // hardcoded edge detection
     let P1 = this.P.copy()
     let P2 = p5.Vector.add(P1, p5.Vector.mult(this.V, dt_ms))
+    // let P3 = P2.copy()
 
     // collision the walls
     if ((P2.x + this.R > window.innerWidth)) {
       this.V.x = - this.V.x
+      P1.x = P2.x
       P2.x = -P2.x +2*(window.innerWidth-this.R)
-    }
-    if ((P2.x - this.R <= 0)) {
+    } else if ((P2.x - this.R <= 0)) {
       this.V.x = - this.V.x
-
+      P1.x = P2.x
       P2.x = -P2.x + 2*this.R
     }
     if ((P2.y + this.R > window.innerHeight)) {
       this.V.y = - this.V.y
-
+      P1.y = P2.y
       P2.y = -P1.y +2*(window.innerHeight-this.R)
-    }
-    if ( (P2.y - this.R <= 0)) {
+    } else if ( (P2.y - this.R <= 0)) {
       this.V.y = - this.V.y
-
+      P1.y = P2.y
       P2.y = -P1.y + 2*this.R
     }
 
@@ -131,7 +131,8 @@ class Disk extends MyCircle{
           this.colide(disk)
           P2 = p5.Vector.add(P1, p5.Vector.mult(this.V, dt_ms))
 
-        } 
+        }
+
       }
     })
 
@@ -145,6 +146,7 @@ class Disk extends MyCircle{
   energy() {
     return 0.5*this.m*(this.V.x*this.V.x + this.V.y*this.V.y) + this.m * p5gui_params.gravity * (window.innerHeight - this.P.y)
   }
+
 
   colide(other) {
     let tana = (other.P.y - this.P.y) / (other.P.x - this.P.x)
