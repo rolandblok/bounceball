@@ -98,20 +98,20 @@ class Disk extends MyCircle{
     // let P3 = P2.copy()
 
     // collision the walls
-    if ((P2.x + this.R > window.innerWidth)) {
+    if ((this.V.x > 0) && (P2.x + this.R > window.innerWidth)) {
       this.V.x = - this.V.x
       P1.x = P2.x
       P2.x = -P2.x +2*(window.innerWidth-this.R)
-    } else if ((P2.x - this.R <= 0)) {
+    } else if ((this.V.x < 0) && (P2.x - this.R <= 0)) {
       this.V.x = - this.V.x
       P1.x = P2.x
       P2.x = -P2.x + 2*this.R
     }
-    if ((P2.y + this.R > window.innerHeight)) {
+    if ((this.V.y > 0) && (P2.y + this.R > window.innerHeight)) {
       this.V.y = - this.V.y
       P1.y = P2.y
       P2.y = -P1.y +2*(window.innerHeight-this.R)
-    } else if ( (P2.y - this.R <= 0)) {
+    } else if ((this.V.y < 0) && (P2.y - this.R <= 0)) {
       this.V.y = - this.V.y
       P1.y = P2.y
       P2.y = -P1.y + 2*this.R
