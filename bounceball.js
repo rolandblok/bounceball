@@ -180,6 +180,16 @@ class Disk extends MyCircle{
 
 }
 
+let max_energy = 0
+function system_energy() {
+  let energy = 0; 
+  disks.forEach(disk => {energy+= disk.energy()})
+  energy *= 0.0001
+  if (energy > max_energy)  max_energy = energy 
+  return energy;
+}
+
+
 // =================
 // ===setup=========
 // =================
@@ -227,19 +237,11 @@ function draw() {
 
   disks.forEach(disk => {disk.draw()});
 
-  stats_energy_panel.update( system_energy(), this.max_energy*2 );
+  stats_energy_panel.update( system_energy(), max_energy*2 );
   this.stats.end();
 
 }
 
-let max_energy = 0
-function system_energy() {
-  let energy = 0; 
-  disks.forEach(disk => {energy+= disk.energy()})
-  energy *= 0.0001
-  if (energy > max_energy)  this.max_energy = energy 
-  return energy;
-}
 
 
 // =================
