@@ -19,7 +19,8 @@ var stats_energy_panel = stats.addPanel( new Stats.Panel( 'energy', '#ff8', '#22
 var p5gui;
 var p5gui_params = {
   speed: 1,  speedMin : 0.1, speedMax: 5, speedStep: 0.05,
-  gravity: 1000, gravityMin:0, gravityMax: 10000, gravityStep: 10
+  gravity: 1000, gravityMin:0, gravityMax: 10000, gravityStep: 10,
+  friction: 0.99, frictionMin : 0.0, frictionMax: 1, frictionStep: .01
 }
 
 let disks = []
@@ -32,11 +33,22 @@ class MyCircle {
     this.R = R
   }
 
-  overlaps(circle2) {
+  overlaps(circle2, perform_deoverlap=false) {
     let dist = p5.Vector.sub(this.P, circle2.P)
 
     let sumOfRadii = this.R + circle2.R;
     let distanceSquared = dist.x * dist.x + dist.y * dist.y;
+
+    if (perform_deoverlap && (distanceSquared  < (sumOfRadii * sumOfRadii))) {
+      let distance = Math.sqrt(distanceSquared)
+      let overlap = (sumOfRadii - distance) / distance
+      let correction = p5.Vector.mult(dist, overlap*0.5)
+      correction.x = correction.x + Math.sign(correction.x)
+      correction.y = correction.y + Math.sign(correction.y)
+      this.P.add(correction)
+      circle2.P.sub(correction)
+      return true
+    }
 
     return distanceSquared  < (sumOfRadii * sumOfRadii)
   }
@@ -81,39 +93,41 @@ class Disk extends MyCircle{
   }
   update(dt_ms) {
 
-    dt_ms *= 0.001*p5gui_params.speed
+    let dt_s = dt_ms * 0.001*p5gui_params.speed
 
 
     if (this.bounce_color_timer < 255) {
-      this.bounce_color_timer += dt_ms * 100
+      this.bounce_color_timer += dt_s * 100
     }
     if (this.bounce_color_timer > 255) this.bounce_color_timer = 255
 
 
-    this.V.y += p5gui_params.gravity * dt_ms
+    this.V.y += p5gui_params.gravity * dt_s
+    let friction = p5.Vector.mult(this.V, p5gui_params.friction*dt_s)
+    this.V = p5.Vector.sub(this.V, friction)
 
     // hardcoded edge detection
     let P1 = this.P.copy()
-    let P2 = p5.Vector.add(P1, p5.Vector.mult(this.V, dt_ms))
+    let P2 = p5.Vector.add(P1, p5.Vector.mult(this.V, dt_s))
     // let P3 = P2.copy()
 
     // collision the walls
     if ((this.V.x > 0) && (P2.x + this.R > window.innerWidth)) {
       this.V.x = - this.V.x
-      P1.x = P2.x
+      P1.x = -this.P.x + 2*(window.innerWidth-this.R)
       P2.x = -P2.x +2*(window.innerWidth-this.R)
     } else if ((this.V.x < 0) && (P2.x - this.R <= 0)) {
       this.V.x = - this.V.x
-      P1.x = P2.x
+      P1.x = -this.P.x + 2*this.R
       P2.x = -P2.x + 2*this.R
     }
     if ((this.V.y > 0) && (P2.y + this.R > window.innerHeight)) {
       this.V.y = - this.V.y
-      P1.y = P2.y
+      P1.y = -this.P.y +2*(window.innerHeight-this.R)
       P2.y = -P1.y +2*(window.innerHeight-this.R)
     } else if ((this.V.y < 0) && (P2.y - this.R <= 0)) {
       this.V.y = - this.V.y
-      P1.y = P2.y
+      P1.y = -this.P.y + 2*this.R
       P2.y = -P1.y + 2*this.R
     }
 
@@ -129,7 +143,7 @@ class Disk extends MyCircle{
           disk.bounce_color_timer = 55
 
           this.colide(disk)
-          P2 = p5.Vector.add(P1, p5.Vector.mult(this.V, dt_ms))
+          P2 = p5.Vector.add(P1, p5.Vector.mult(this.V, dt_s))
 
         }
 
@@ -236,12 +250,30 @@ function draw() {
   circle(mouseX, mouseY, 80);
 
   disks.forEach(disk => {disk.draw()});
+  perform_deoverlap(disks);
+
 
   stats_energy_panel.update( system_energy(), max_energy*2 );
   this.stats.end();
 
 }
 
+function perform_deoverlap(disks) {
+  let there_was_overlap = true
+
+  let N = disks.length;
+  while (there_was_overlap) {
+    there_was_overlap = false
+    for (var i=0; i < N; i++) {
+      for (var j=i+1; j < N; j++) {
+        let botsing = disks[i].overlaps(disks[j], true)
+        if (botsing) {
+          there_was_overlap = true
+        }
+      }
+    }
+  }
+}
 
 
 // =================
